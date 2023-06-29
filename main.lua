@@ -25,7 +25,6 @@ local function console(str)
 end
 
 local function drawTetros(tetro, rot, x, y)
-
     local color = {
         {1, 0, 0},
         {0, 1, 0},
@@ -41,13 +40,19 @@ local function drawTetros(tetro, rot, x, y)
             if Tetros[tetro][rot][i][j] == 1 then
                 -- rectangle
                 love.graphics.setColor(1, 1, 1)
+                --love.graphics.setColor(color[tetro][1], color[tetro][2], color[tetro][3])
                 love.graphics.rectangle("fill", (j-1+x)*scale, (i-1+y)*scale, scale, scale)
                 -- sous rectangle
-                love.graphics.setColor(color[tetro])
+                love.graphics.setColor(color[tetro][1], color[tetro][2], color[tetro][3])
                 love.graphics.rectangle("fill", (j-1+x)*scale+1, (i-1+y)*scale+1, scale-2, scale-2)
             end
         end
     end
+end
+
+local function drawSquare(x, y)
+    love.graphics.setColor(0, 0, 1)
+    love.graphics.rectangle("fill", x*scale+1, y*scale+1, scale-2, scale-2)    
 end
 
 local function initGrid()
@@ -60,12 +65,54 @@ local function initGrid()
 end
 
 local function drawGrid()
+    love.graphics.setColor(1, 1, 1)
+
+    for i = 1, gridY do
+        -- Dessiner une ligne horizontale
+        love.graphics.line(0, (i-1)*scale, gridX*scale, (i-1)*scale)
+    end
+
+    for j = 1, gridX do
+        -- Dessiner une ligne verticale
+        love.graphics.line((j-1)*scale, 0, (j-1)*scale, gridY*scale)
+    end
+
+    -- contour
+    love.graphics.rectangle("line", 0, 0, gridX*scale, gridY*scale)
+end
+
+
+local function drawBg()
+    if bgimage == false then
+        return
+    end
+
+    local windowWidth = love.graphics.getWidth()
+    local windowHeight = love.graphics.getHeight()
+
+    local imageWidth = bgimage:getWidth()
+    local imageHeight = bgimage:getHeight()
+
+    -- Calculer les dimensions de l'image en fonction de la taille de la fenêtre
+    local scale = math.min(windowWidth / imageWidth, windowHeight / imageHeight)
+    local scaledWidth = imageWidth * scale
+    local scaledHeight = imageHeight * scale
+
+    -- Calculer les coordonnées pour centrer l'image
+    local x = (windowWidth - scaledWidth) / 2
+    local y = (windowHeight - scaledHeight) / 2
+
+    -- Dessiner l'image avec les coordonnées et les dimensions calculées
+    love.graphics.draw(bgimage, x, y, 0, scale, scale)
+end
+
+local function drawInnerGridTetro()
     for i = 1, gridY do
         for j = 1, gridX do
-            love.graphics.setColor(0.25, 0.25, 0.25)
-            love.graphics.rectangle("fill", (j-1)*scale, (i-1)*scale, scale, scale)
-            love.graphics.setColor(0, 0, 0)
-            love.graphics.rectangle("fill", (j-1)*scale+1, (i-1)*scale+1, scale-2, scale-2)
+            if grid[i][j] == 1 then
+                print("drawSquare(" .. j-1 .. ", " .. i-1 .. ")")
+                drawSquare(j-1, i-1)
+            end
         end
     end
 end
@@ -76,24 +123,60 @@ function love.load()
     initGrid()
 end
 
+
+local function randomTetros()
+    return math.random(1, #Tetros)
+end
+
+local function newTetro()
+    tetros = randomTetros()
+    tetrosX = 0
+    tetrosY = 0
+    tetrosR = 1
+end
+
 function love.update(dt)
+    if not love.window.hasFocus() and not devmode then
+        return
+    end
+
     timer = timer + dt
 
-    -- All 1 second
-    if timer >= 1 then
-        tetrosY = tetrosY + 1
-        timer = timer - 1
+    -- Wait 1 second
+    if timer < 1 then
+        return
     end
+
+    timer = timer - 1
+
+    if tetrosY + #Tetros[tetrosR] < gridY - 1 then
+        tetrosY = tetrosY + 1
+        return
+    end
+
+    for i = 1, 4 do
+        for j = 1, 4 do
+            if Tetros[tetros][tetrosR][i][j] == 1 then
+                local gridXPos = tetrosX + j
+                local gridYPos = tetrosY + i
+                grid[gridYPos][gridXPos] = 1
+            end
+        end
+    end
+
+    newTetro()
 end
 
 function love.draw()
-    if bgimage then
-        love.graphics.draw(bgimage, 0, 0, 0, 0.5, 0.5)
-    end
 
+    --drawBg()
 
-    drawGrid()
+    --drawGrid()
     drawTetros(tetros, tetrosR, tetrosX, tetrosY)
+    drawInnerGridTetro()
+
+    drawSquare(5, 5)
+
     --drawTetros(1, 1, 0, 0) 
     --drawTetros(3, 1, 8, 0)
     --drawTetros(4, 1, 12, 0)
@@ -125,13 +208,11 @@ function love.keypressed(key)
 
     -- Slow drop
     if key == "s" then
-        -- check if we can go down
         local maxL = #Tetros[tetrosR]
-        if tetrosY + maxL < 20 then
+        if tetrosY + maxL < gridY - 1 then
             tetrosY = tetrosY + 1
+            timer = 0
         end
-
-        --tetrosY = tetrosY + 1
     end
 
     -- Rotate
