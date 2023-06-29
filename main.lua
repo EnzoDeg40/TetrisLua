@@ -12,6 +12,8 @@ local gridX = 10
 local gridY = 20
 local bgimage = nil
 local speed = 5
+local offsetGameX = 200
+local offsetGameY = 100
 
 -- Tableau de 10 colonnes et 20 lignes
 local grid = {}
@@ -33,10 +35,10 @@ local function drawTetros(tetro, rot, x, y)
                 -- rectangle
                 love.graphics.setColor(1, 1, 1)
                 --love.graphics.setColor(color[tetro][1], color[tetro][2], color[tetro][3])
-                love.graphics.rectangle("fill", (j-1+x)*scale, (i-1+y)*scale, scale, scale)
+                love.graphics.rectangle("fill", (j-1+x)*scale+offsetGameX, (i-1+y)*scale+offsetGameY, scale, scale)
                 -- sous rectangle
                 love.graphics.setColor(color[tetro][1], color[tetro][2], color[tetro][3])
-                love.graphics.rectangle("fill", (j-1+x)*scale+1, (i-1+y)*scale+1, scale-2, scale-2)
+                love.graphics.rectangle("fill", (j-1+x)*scale+1+offsetGameX, (i-1+y)*scale+1+offsetGameY, scale-2, scale-2)
             end
         end
     end
@@ -44,7 +46,7 @@ end
 
 local function drawSquare(x, y)
     love.graphics.setColor(0, 0, 1)
-    love.graphics.rectangle("fill", x*scale+1, y*scale+1, scale-2, scale-2)    
+    love.graphics.rectangle("fill", x*scale+offsetGameX+1, y*scale+offsetGameY+1, scale-2, scale-2)    
 end
 
 local function initGrid()
@@ -61,16 +63,16 @@ local function drawGrid()
 
     for i = 1, gridY do
         -- Dessiner une ligne horizontale
-        love.graphics.line(0, (i-1)*scale, gridX*scale, (i-1)*scale)
+        love.graphics.line(offsetGameX, (i-1)*scale + offsetGameY, gridX*scale + offsetGameX, (i-1)*scale + offsetGameY)
     end
 
     for j = 1, gridX do
         -- Dessiner une ligne verticale
-        love.graphics.line((j-1)*scale, 0, (j-1)*scale, gridY*scale)
+        love.graphics.line((j-1)*scale + offsetGameX, offsetGameY, (j-1)*scale + offsetGameX, gridY*scale + offsetGameY)
     end
 
     -- contour
-    love.graphics.rectangle("line", 0, 0, gridX*scale, gridY*scale)
+    love.graphics.rectangle("line", offsetGameX, offsetGameY, gridX*scale, gridY*scale)
 end
 
 
@@ -81,7 +83,7 @@ local function drawBg(method)
 
     if method == "simple" then
         love.graphics.setColor(1, 1, 1)
-        love.graphics.draw(bgimage, 0, 0, 0, 0.2, 0.2, 0, 0)
+        love.graphics.draw(bgimage, 0, 0, 0, 0.2, 0.25, 0, 0)
         return
     end
 
@@ -116,6 +118,7 @@ end
 
 function love.load()
     love.window.setTitle("Tetris")
+    love.window.setMode(800, 600, {resizable=true, minwidth=400, minheight=300})
     bgimage = love.graphics.newImage("michael-d-rnKqWvO80Y4-unsplash.jpg")
     initGrid()
 end
@@ -169,6 +172,14 @@ function love.update(dt)
 end
 
 function love.draw()
+    -- récupère la largeur et la hauteur de la fenêtre
+    local windowWidth = love.graphics.getWidth()
+    local windowHeight = love.graphics.getHeight()
+
+    -- modifie l'offset 
+    offsetGameX = (windowWidth - gridX * scale) / 2
+    offsetGameY = (windowHeight - gridY * scale) / 2
+
     drawBg("simple")
     drawGrid()
     drawTetros(tetros, tetrosR, tetrosX, tetrosY)
