@@ -10,19 +10,11 @@ local scale = 20
 local devmode = true
 local gridX = 10
 local gridY = 20
-local nlog = 0
 local bgimage = nil
+local speed = 5
 
 -- Tableau de 10 colonnes et 20 lignes
 local grid = {}
-
-local function console(str)
-    if devmode then
-        nlog = nlog + 1
-        love.window.setTitle("Tetris - " .. str .. " (" .. nlog .. ")")
-        --love.graphics.print(str .. ' (' .. nlog .. ')', 0, 0)
-    end
-end
 
 local function drawTetros(tetro, rot, x, y)
     local color = {
@@ -82,8 +74,14 @@ local function drawGrid()
 end
 
 
-local function drawBg()
+local function drawBg(method)
     if bgimage == false then
+        return
+    end
+
+    if method == "simple" then
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.draw(bgimage, 0, 0, 0, 0.2, 0.2, 0, 0)
         return
     end
 
@@ -110,7 +108,6 @@ local function drawInnerGridTetro()
     for i = 1, gridY do
         for j = 1, gridX do
             if grid[i][j] == 1 then
-                print("drawSquare(" .. j-1 .. ", " .. i-1 .. ")")
                 drawSquare(j-1, i-1)
             end
         end
@@ -149,6 +146,10 @@ function love.update(dt)
 
     timer = timer - 1
 
+    -- Drop jusqua ce qua touche un autre tetros present dans le grid
+    
+
+    -- Drop jusqu'en bas
     if tetrosY + #Tetros[tetrosR] < gridY - 1 then
         tetrosY = tetrosY + 1
         return
@@ -168,21 +169,10 @@ function love.update(dt)
 end
 
 function love.draw()
-
-    --drawBg()
-
-    --drawGrid()
+    drawBg("simple")
+    drawGrid()
     drawTetros(tetros, tetrosR, tetrosX, tetrosY)
     drawInnerGridTetro()
-
-    drawSquare(5, 5)
-
-    --drawTetros(1, 1, 0, 0) 
-    --drawTetros(3, 1, 8, 0)
-    --drawTetros(4, 1, 12, 0)
-    --drawTetros(5, 1, 16, 0)
-    --drawTetros(6, 1, 20, 0)
-    --drawTetros(7, 1, 24, 0)
 end
 
 function love.keypressed(key)
@@ -213,6 +203,11 @@ function love.keypressed(key)
             tetrosY = tetrosY + 1
             timer = 0
         end
+    end
+
+    -- Fast drop
+    if key == "z" then
+        -- TODO
     end
 
     -- Rotate
